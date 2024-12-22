@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard IoT</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Dashboard Data Sensor</h1>
+    <canvas id="sensorChart"></canvas>
+    <button onclick="controlDevice('ON')">Hidupkan</button>
+    <button onclick="controlDevice('OFF')">Matikan</button>
+
+    <script>
+        const ctx = document.getElementById('sensorChart').getContext('2d');
+        const sensorChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [], // Waktu
+                datasets: [{
+                    label: 'Total Akselerasi',
+                    data: [], // Data akselerasi
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { display: true },
+                    y: { display: true }
+                }
+            }
+        });
+
+        // Fetch data sensor secara berkala
+        setInterval(async () => {
+            const response = await fetch('api/get_sensor_data.php');
+            const data = await response.json();
+            const latest = data[data.length - 1];
+
+            if (latest) {
+                sensorChart.data.labels.push(new Date(latest.timestamp).toLocaleTimeString());
+                sensorChart.data.datasets[0].data.push(latest.totalAccel);
+                sensorChart.update();
+            }
+        }, 1000);
+
+        // Kontrol perangkat
+        async function controlDevice(status) {
+            await fetch('api/control.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status })
+            });
+        }
+    </script>
+</body>
+</html>
